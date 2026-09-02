@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="sk" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Môj spevník</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  :root, [data-theme="light"]{
+    --bg: #F5F3EC;
+    --surface: #FFFFFF;
+    --surface-alt: #FBFAF4;
+    --ink: #211F1A;
+    --ink-soft: #6E6A5E;
+    --accent: #B3492F;
+    --border: #E2DDCC;
+    --border-strong: #CDC5AC;
+    --btn-bg: #211F1A;
+    --btn-ink: #F5F3EC;
+    --grain-opacity: 0.05;
+  }
+  [data-theme="dark"]{
+    --bg: #221F1B;
+    --surface: #2B2823;
+    --surface-alt: #2F2C26;
+    --ink: #EDE8DC;
+    --ink-soft: #9C9484;
+    --accent: #E08A66;
+    --border: #3B372F;
+    --border-strong: #4B463C;
+    --btn-bg: #EDE8DC;
+    --btn-ink: #221F1B;
+    --grain-opacity: 0.07;
+  }
+  *{box-sizing:border-box;}
+  html{background:var(--bg);}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Roboto Mono', ui-monospace, monospace;
+    min-height:100vh;
+    position:relative;
+    transition:background .2s ease, color .2s ease;
+  }
+  body::before{
+    content:"";
+    position:fixed;
+    inset:0;
+    z-index:999;
+    pointer-events:none;
+    opacity:var(--grain-opacity);
+    mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size:180px 180px;
+  }
+  .app{max-width:700px;margin:0 auto;padding:28px 20px 80px;position:relative;z-index:1;}
+  .app-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:22px;border-bottom:2px solid var(--border-strong);padding-bottom:14px;gap:12px;}
+  .app-title{font-weight:700;font-size:1.5rem;margin:0;letter-spacing:0.2px;}
+  .app-title .accent{color:var(--accent);}
+  .app-sub{color:var(--ink-soft);font-size:0.82rem;margin-top:4px;}
+  .header-right{display:flex;flex-direction:column;align-items:flex-end;gap:10px;}
+
+  button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit;}
+  .btn{
+    display:inline-flex;align-items:center;gap:6px;
+    padding:9px 16px;border-radius:2px;
+    border:1.5px solid var(--btn-bg);
+    background:var(--btn-bg);color:var(--btn-ink);
+    font-size:0.85rem;font-weight:600;
+    transition:opacity .12s ease, transform .12s ease;
+  }
+  .btn:hover{opacity:0.85;}
+  .btn:active{transform:scale(0.97);}
+  .btn-ghost{
+    background:transparent;color:var(--ink);border:1.5px solid var(--border-strong);
+  }
+  .btn-ghost:hover{background:var(--surface-alt);}
+  .btn-text{
+    color:var(--ink-soft);border:none;padding:6px 8px;font-size:0.82rem;text-decoration:underline;text-underline-offset:3px;
+  }
+  .btn-text:hover{color:var(--accent);}
+  .btn-danger{color:var(--accent);}
+  .btn-danger:hover{opacity:0.75;}
+
+  .theme-switch{
+    display:inline-flex;border:1.5px solid var(--border-strong);border-radius:2px;overflow:hidden;
+  }
+  .ts-option{
+    padding:6px 11px;font-size:0.95rem;line-height:1;color:var(--ink-soft);background:var(--surface);
+  }
+  .ts-option.active{background:var(--btn-bg);color:var(--btn-ink);}
+
+  input[type=text], textarea{
+    width:100%;font-family:inherit;font-size:0.92rem;
+    background:var(--surface);
+    border:1.5px solid var(--border-strong);
+    border-radius:2px;padding:10px 12px;color:var(--ink);
+  }
+  input[type=text]:focus, textarea:focus{outline:2px solid var(--accent);outline-offset:1px;}
+  label{display:block;font-size:0.78rem;color:var(--ink-soft);margin-bottom:5px;font-weight:600;}
+  .field{margin-bottom:16px;}
+  textarea.chords{min-height:280px;line-height:1.6;resize:vertical;}
+
+  /* ---------- Song list ---------- */
+  .toolbar{display:flex;gap:10px;margin-bottom:18px;}
+  .toolbar input{flex:1;}
+  .song-list{display:flex;flex-direction:column;gap:9px;}
+  .song-card{
+    background:var(--surface);
+    border:1.5px solid var(--border);
+    border-left:4px solid var(--border-strong);
+    border-radius:2px;
+    padding:13px 16px;
+    display:flex;align-items:center;justify-content:space-between;
+    transition:border-color .12s ease, transform .12s ease;
+  }
+  .song-card:hover{border-left-color:var(--accent);cursor:pointer;transform:translateX(2px);}
+  .song-card-title{font-weight:600;font-size:0.98rem;}
+  .song-card-artist{color:var(--ink-soft);font-size:0.8rem;margin-top:3px;}
+  .song-card-key{
+    font-size:0.85rem;color:var(--accent);font-weight:600;
+    min-width:30px;text-align:right;
+  }
+  .empty-state{
+    text-align:center;padding:60px 20px;color:var(--ink-soft);
+    border:1.5px dashed var(--border-strong);border-radius:3px;font-size:0.88rem;
+  }
+  .empty-state .big{font-weight:600;color:var(--ink);margin-bottom:6px;font-size:1.02rem;}
+
+  /* ---------- Song detail ---------- */
+  .detail-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+  .song-heading{margin-bottom:18px;}
+  .song-heading h1{font-size:1.35rem;margin:2px 0 2px;font-weight:700;}
+  .song-heading .artist{color:var(--ink-soft);font-size:0.85rem;}
+
+  .transpose-bar{
+    display:flex;align-items:center;gap:10px;
+    background:var(--surface);border:1.5px solid var(--border);
+    border-radius:3px;padding:10px 14px;margin-bottom:20px;flex-wrap:wrap;
+  }
+  .tp-btn{
+    width:32px;height:32px;border-radius:2px;
+    border:1.5px solid var(--border-strong);color:var(--ink);
+    font-size:1.05rem;font-weight:700;display:flex;align-items:center;justify-content:center;
+    background:var(--surface);
+  }
+  .tp-btn:hover{background:var(--btn-bg);color:var(--btn-ink);border-color:var(--btn-bg);}
+  .tp-label{font-size:0.85rem;color:var(--accent);min-width:100px;text-align:center;font-weight:600;}
+  .tp-reset{font-size:0.76rem;color:var(--ink-soft);text-decoration:underline;text-underline-offset:2px;}
+  .tp-flip{font-size:0.76rem;color:var(--ink-soft);border:1px solid var(--border-strong);border-radius:2px;padding:5px 9px;}
+  .tp-flip:hover{border-color:var(--ink);color:var(--ink);}
+  #tp-flip{margin-left:auto;}
+
+  .sheet{
+    background:var(--surface);
+    border:1.5px solid var(--border);
+    border-radius:3px;
+    padding:22px 20px;
+    font-size:0.95rem;
+    line-height:1.4;
+    overflow-x:auto;
+  }
+  .lyric-line{display:flex;flex-wrap:wrap;align-items:flex-end;min-height:1.5em;}
+  .plain-line{white-space:pre-wrap;color:var(--ink);min-height:1.4em;}
+  .plain-line.label{font-weight:700;color:var(--ink-soft);margin-top:14px;}
+  .chunk{display:inline-flex;flex-direction:column;align-items:flex-start;}
+  .chunk .chord{
+    font-weight:700;font-size:0.85rem;
+    color:var(--accent);line-height:1;height:1.3em;white-space:pre;
+  }
+  .chunk .lyric{white-space:pre;color:var(--ink);}
+  .blank-line{height:0.9em;}
+
+  .actions-row{display:flex;gap:10px;margin-top:22px;}
+  .helper{
+    font-size:0.76rem;color:var(--ink-soft);background:var(--surface-alt);
+    border:1px solid var(--border);border-radius:3px;padding:10px 12px;margin-bottom:16px;line-height:1.55;
+  }
+  .helper code{background:var(--surface);color:var(--accent);padding:1px 5px;border-radius:2px;font-weight:600;border:1px solid var(--border);}
+  .form-actions{display:flex;gap:10px;margin-top:6px;}
+  .loading{text-align:center;padding:60px;color:var(--ink-soft);font-size:0.9rem;}
+  .form-title{font-size:1.15rem;margin-top:4px;font-weight:700;}
+
+  .toc-panel{
+    display:flex;flex-direction:column;gap:6px;
+    background:var(--surface);border:1.5px solid var(--border);border-radius:3px;
+    padding:10px;margin-bottom:18px;max-height:260px;overflow-y:auto;
+  }
+  .toc-item{
+    display:flex;align-items:baseline;justify-content:space-between;gap:10px;
+    padding:8px 10px;border-radius:2px;cursor:pointer;
+    border-left:3px solid transparent;
+  }
+  .toc-item:hover{background:var(--surface-alt);}
+  .toc-item.current{border-left-color:var(--accent);background:var(--surface-alt);}
+  .toc-title{font-size:0.85rem;font-weight:600;}
+  .toc-artist{font-size:0.74rem;color:var(--ink-soft);white-space:nowrap;}
+
+  @media (max-width:480px){
+    .app-title{font-size:1.2rem;}
+    .sheet{padding:16px 12px;font-size:0.88rem;}
+  }
+</style>
+</head>
+<body>
+<div class="app" id="app"><div class="loading">Otváram spevník…</div></div>
+
+<script>
+const STORAGE_KEY = 'songbook-songs-v1';
+const THEME_KEY = 'songbook-theme-v1';
+let songs = [];
+let theme = 'light';
+let view = { screen: 'loading' }; // loading | list | detail | form
+
+const NOTES_SHARP_INTL = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const NOTES_FLAT_INTL  = ['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
+// Česko-slovenská (nemecká) notácia: H = céčkové "B" (prirodzené H), B = Béčko (Bb)
+const NOTES_SHARP_CZ = ['C','C#','D','D#','E','F','F#','G','G#','A','B','H'];
+const NOTES_FLAT_CZ  = ['C','Db','D','Eb','E','F','Gb','G','Ab','A','B','H'];
+
+const CZ_BASE = {C:0,D:2,E:4,F:5,G:7,A:9,H:11,B:10};
+const INTL_BASE = {C:0,D:2,E:4,F:5,G:7,A:9,B:11};
+
+function noteIndexForMode(letter, acc, mode){
+  const map = mode === 'cz' ? CZ_BASE : INTL_BASE;
+  let base = map[letter.toUpperCase()];
+  if(base === undefined) return -1;
+  if(acc === '#') base += 1;
+  else if(acc === 'b') base -= 1;
+  return ((base % 12) + 12) % 12;
+}
+
+function outputNote(idx, mode, preferFlat){
+  const table = mode === 'cz'
+    ? (preferFlat ? NOTES_FLAT_CZ : NOTES_SHARP_CZ)
+    : (preferFlat ? NOTES_FLAT_INTL : NOTES_SHARP_INTL);
+  return table[idx];
+}
+
+function transposeSingleChord(chord, semis, preferFlat, mode){
+  const m = chord.match(/^([A-Ha-h])(#|b)?(.*)$/);
+  if(!m) return chord;
+  let [, letter, acc, rest] = m;
+  const idx = noteIndexForMode(letter, acc, mode);
+  if(idx === -1) return chord;
+  const newIdx = ((idx + semis) % 12 + 12) % 12;
+  return outputNote(newIdx, mode, preferFlat) + rest;
+}
+
+function transposeChordToken(token, semis, preferFlat, mode){
+  return token.split('/').map(p => transposeSingleChord(p, semis, preferFlat, mode)).join('/');
+}
+
+function guessNotation(rawBody){
+  const processed = preprocessBody(rawBody || '');
+  return /\[H(#|b)?(\]|[a-z0-9])/.test(processed) ? 'cz' : 'intl';
+}
+
+// ---------- chord/lyric two-line detection & merge ----------
+const CHORD_TOKEN_RE = /^[A-H](#|b)?(maj7|maj9|maj|majmin|min7|min9|min11|min|m7b5|m7#5|m6|m7|m9|m11|m13|m|dim7|dim|aug|sus2|sus4|sus|add9|add11|add2|add4|6\/9|6|7sus4|7sus2|7|9|11|13|°|\+|\-)*(\/[A-H](#|b)?)?$/i;
+const BAR_TOKEN_RE = /^[|:.\-–—x%]+$/i;
+
+function isChordLine(line){
+  const trimmed = line.trim();
+  if(!trimmed) return false;
+  if(trimmed.includes('[')) return false;
+  const tokens = trimmed.split(/\s+/);
+  if(tokens.length === 0 || tokens.length > 14) return false;
+  for(const t of tokens){
+    if(!(CHORD_TOKEN_RE.test(t) || BAR_TOKEN_RE.test(t))) return false;
+  }
+  return true;
+}
+
+function mergeChordLyric(chordLine, lyricLine){
+  const tokens = [];
+  const re = /\S+/g;
+  let m;
+  while((m = re.exec(chordLine)) !== null) tokens.push({text: m[0], col: m.index});
+  if(tokens.length === 0) return lyricLine;
+  let result = '';
+  let cursor = 0;
+  for(const {text, col} of tokens){
+    if(col > cursor){
+      result += lyricLine.slice(cursor, col);
+      cursor = col;
+    }
+    result += `[${text}]`;
+  }
+  result += lyricLine.slice(cursor);
+  return result;
+}
+
+function preprocessBody(raw){
+  const lines = raw.split('\n');
+  const out = [];
+  for(let i = 0; i < lines.length; i++){
+    const line = lines[i];
+    if(isChordLine(line)){
+      const next = lines[i+1];
+      const hasLyricNext = next !== undefined && next.trim() !== '' && !isChordLine(next) && !next.includes('[');
+      const lyric = hasLyricNext ? next : '';
+      out.push(mergeChordLyric(line, lyric));
+      if(hasLyricNext) i++;
+    } else {
+      out.push(line);
+    }
+  }
+  return out.join('\n');
+}
+
+// ---------- rendering a bracketed line into chord/lyric chunks ----------
+function renderChordedLine(line, semis, preferFlat, mode){
+  if(!line.includes('[')){
+    const isLabel = /^\s*[\(\[]?[A-ZÁÄČĎÉÍĹĽŇÓŔŠŤÚÝŽa-záäčďéíĺľňóŕšťúýž0-9 .:]{2,30}[:\)\]]?\s*$/.test(line) && /:|refr|sloha|predspev|medzihra|bridge|chorus|verse|intro|outro/i.test(line);
+    const div = document.createElement('div');
+    div.className = 'plain-line' + (isLabel ? ' label' : '');
+    div.textContent = line.length ? line : '\u00A0';
+    return div;
+  }
+  const row = document.createElement('div');
+  row.className = 'lyric-line';
+  const re = /\[([^\]]+)\]([^\[]*)/g;
+  let m;
+  let any = false;
+  while((m = re.exec(line)) !== null){
+    any = true;
+    const chord = transposeChordToken(m[1], semis, preferFlat, mode);
+    const lyric = m[2];
+    const chunk = document.createElement('span');
+    chunk.className = 'chunk';
+    const chordSpan = document.createElement('span');
+    chordSpan.className = 'chord';
+    chordSpan.textContent = chord;
+    const lyricSpan = document.createElement('span');
+    lyricSpan.className = 'lyric';
+    lyricSpan.textContent = lyric.length ? lyric : '\u00A0';
+    chunk.appendChild(chordSpan);
+    chunk.appendChild(lyricSpan);
+    row.appendChild(chunk);
+  }
+  if(!any){
+    row.textContent = line;
+  }
+  return row;
+}
+
+// ---------- storage ----------
+async function loadSongs(){
+  try{
+    const res = await window.storage.get(STORAGE_KEY, false);
+    songs = res && res.value ? JSON.parse(res.value) : [];
+  }catch(e){
+    songs = [];
+  }
+}
+
+async function persist(){
+  try{
+    await window.storage.set(STORAGE_KEY, JSON.stringify(songs), false);
+  }catch(e){
+    console.error('Uloženie zlyhalo', e);
+  }
+}
+
+async function loadTheme(){
+  try{
+    const res = await window.storage.get(THEME_KEY, false);
+    theme = res && res.value ? res.value : 'light';
+  }catch(e){
+    theme = 'light';
+  }
+  document.documentElement.setAttribute('data-theme', theme);
+}
+
+async function setTheme(next){
+  theme = next;
+  document.documentElement.setAttribute('data-theme', theme);
+  try{ await window.storage.set(THEME_KEY, theme, false); }catch(e){}
+  const s = document.getElementById('theme-switch');
+  if(s) renderThemeSwitchState(s);
+}
+
+function renderThemeSwitchState(container){
+  container.querySelectorAll('.ts-option').forEach(el => {
+    el.classList.toggle('active', el.dataset.mode === theme);
+  });
+}
+
+function uid(){ return 'song_' + Date.now() + '_' + Math.random().toString(36).slice(2,8); }
+
+// ---------- views ----------
+function goList(){ view = { screen: 'list' }; render(); }
+function goDetail(id){
+  const s = songs.find(sg=>sg.id===id) || {};
+  view = { screen: 'detail', id, semis: s.transpose || 0, preferFlat: s.preferFlat || false, notation: s.notation || 'intl', tocOpen: false };
+  render();
+}
+function toggleToc(){ view.tocOpen = !view.tocOpen; render(); }
+function goNewForm(){ view = { screen: 'form', id: null }; render(); }
+function goEditForm(id){ view = { screen: 'form', id }; render(); }
+
+async function saveSongFromForm(){
+  const title = document.getElementById('f-title').value.trim();
+  const artist = document.getElementById('f-artist').value.trim();
+  const key = document.getElementById('f-key').value.trim();
+  const body = document.getElementById('f-body').value;
+  if(!title){ document.getElementById('f-title').focus(); return; }
+  if(view.id){
+    const song = songs.find(s => s.id === view.id);
+    song.title = title; song.artist = artist; song.key = key; song.body = body;
+  } else {
+    songs.push({ id: uid(), title, artist, key, body, transpose: 0, preferFlat: false, notation: guessNotation(body) });
+  }
+  await persist();
+  goList();
+}
+
+async function deleteSong(id){
+  songs = songs.filter(s => s.id !== id);
+  await persist();
+  goList();
+}
+
+async function changeTranspose(delta){
+  const song = songs.find(s => s.id === view.id);
+  view.semis += delta;
+  song.transpose = view.semis;
+  await persist();
+  renderDetailSheet();
+  renderDetailHeader();
+}
+
+async function resetTranspose(){
+  const song = songs.find(s => s.id === view.id);
+  view.semis = 0;
+  song.transpose = 0;
+  await persist();
+  renderDetailSheet();
+  renderDetailHeader();
+}
+
+async function toggleFlip(){
+  const song = songs.find(s => s.id === view.id);
+  view.preferFlat = !view.preferFlat;
+  song.preferFlat = view.preferFlat;
+  await persist();
+  renderDetailSheet();
+}
+
+async function toggleNotation(){
+  const song = songs.find(s => s.id === view.id);
+  view.notation = view.notation === 'cz' ? 'intl' : 'cz';
+  song.notation = view.notation;
+  await persist();
+  renderDetailSheet();
+  renderNotationLabel();
+}
+
+function renderNotationLabel(){
+  const btn = document.getElementById('tp-notation');
+  if(!btn) return;
+  btn.textContent = view.notation === 'cz' ? 'Zápis: H' : 'Zápis: B';
+}
+
+function renderDetailHeader(){
+  const label = document.getElementById('tp-label');
+  if(!label) return;
+  const s = view.semis;
+  label.textContent = s === 0 ? 'pôvodná tónina' : (s > 0 ? `+${s} poltónov` : `${s} poltónov`);
+}
+
+function renderDetailSheet(){
+  const sheet = document.getElementById('sheet');
+  if(!sheet) return;
+  sheet.innerHTML = '';
+  const song = songs.find(s => s.id === view.id);
+  const processed = preprocessBody(song.body || '');
+  const lines = processed.split('\n');
+  for(const line of lines){
+    if(line.trim() === ''){
+      const b = document.createElement('div');
+      b.className = 'blank-line';
+      sheet.appendChild(b);
+    } else {
+      sheet.appendChild(renderChordedLine(line, view.semis, view.preferFlat, view.notation));
+    }
+  }
+}
+
+function escapeHtml(s){
+  return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function themeSwitchHtml(){
+  return `
+    <div class="theme-switch" id="theme-switch">
+      <button class="ts-option" data-mode="light" title="Svetlý režim">○</button>
+      <button class="ts-option" data-mode="dark" title="Tmavý režim">●</button>
+    </div>
+  `;
+}
+
+function wireThemeSwitch(){
+  const el = document.getElementById('theme-switch');
+  if(!el) return;
+  renderThemeSwitchState(el);
+  el.querySelectorAll('.ts-option').forEach(btn => {
+    btn.addEventListener('click', () => setTheme(btn.dataset.mode));
+  });
+}
+
+function tocPanelHtml(currentId){
+  const sorted = [...songs].sort((a,b) => a.title.localeCompare(b.title, 'sk'));
+  const items = sorted.map(s => `
+    <div class="toc-item${s.id === currentId ? ' current' : ''}" data-id="${s.id}">
+      <span class="toc-title">${escapeHtml(s.title)}</span>
+      ${s.artist ? `<span class="toc-artist">${escapeHtml(s.artist)}</span>` : ''}
+    </div>
+  `).join('');
+  return `<div class="toc-panel" id="toc-panel">${items || '<div class="empty-state">Žiadne ďalšie piesne.</div>'}</div>`;
+}
+
+function wireTocPanel(){
+  const panel = document.getElementById('toc-panel');
+  if(!panel) return;
+  panel.querySelectorAll('.toc-item').forEach(el => {
+    el.addEventListener('click', () => goDetail(el.dataset.id));
+  });
+}
+function render(){
+  const app = document.getElementById('app');
+
+  if(view.screen === 'loading'){
+    app.innerHTML = '<div class="loading">Otváram spevník…</div>';
+    return;
+  }
+
+  if(view.screen === 'list'){
+    const query = view.query || '';
+    const filtered = songs
+      .filter(s => (s.title + ' ' + s.artist).toLowerCase().includes(query.toLowerCase()))
+      .sort((a,b) => a.title.localeCompare(b.title, 'sk'));
+
+    app.innerHTML = `
+      <div class="app-header">
+        <div>
+          <h1 class="app-title">Môj <span class="accent">spevník</span></h1>
+          <div class="app-sub">${songs.length} ${songs.length === 1 ? 'pieseň' : (songs.length >=2 && songs.length<=4 ? 'piesne' : 'piesní')}</div>
+        </div>
+        <div class="header-right">
+          ${themeSwitchHtml()}
+          <button class="btn" id="btn-new">+ Nová pieseň</button>
+        </div>
+      </div>
+      <div class="toolbar">
+        <input type="text" id="search" placeholder="Hľadať pieseň alebo interpreta…" value="${escapeHtml(query)}">
+      </div>
+      <div class="song-list" id="song-list"></div>
+    `;
+    wireThemeSwitch();
+    const list = document.getElementById('song-list');
+    if(filtered.length === 0){
+      list.innerHTML = songs.length === 0
+        ? `<div class="empty-state"><div class="big">Zatiaľ prázdna stránka</div>Pridaj prvú pieseň a začni si budovať vlastný spevník.</div>`
+        : `<div class="empty-state">Nič sa nenašlo.</div>`;
+    } else {
+      for(const s of filtered){
+        const card = document.createElement('div');
+        card.className = 'song-card';
+        card.innerHTML = `
+          <div>
+            <div class="song-card-title">${escapeHtml(s.title)}</div>
+            ${s.artist ? `<div class="song-card-artist">${escapeHtml(s.artist)}</div>` : ''}
+          </div>
+          <div class="song-card-key">${escapeHtml(s.key || '')}</div>
+        `;
+        card.addEventListener('click', () => goDetail(s.id));
+        list.appendChild(card);
+      }
+    }
+    document.getElementById('btn-new').addEventListener('click', goNewForm);
+    document.getElementById('search').addEventListener('input', (e) => { view.query = e.target.value; render(); });
+    document.getElementById('search').focus();
+    if(query) document.getElementById('search').setSelectionRange(query.length, query.length);
+    return;
+  }
+
+  if(view.screen === 'detail'){
+    const song = songs.find(s => s.id === view.id);
+    if(!song){ goList(); return; }
+    app.innerHTML = `
+      <div class="detail-top">
+        <button class="btn-text" id="btn-back">← Späť do spevníka</button>
+        ${themeSwitchHtml()}
+      </div>
+      <div class="detail-top">
+        <button class="btn-text" id="btn-toc">${view.tocOpen ? '▴ Skryť obsah' : '▾ Obsah'}</button>
+      </div>
+      ${view.tocOpen ? tocPanelHtml(song.id) : ''}
+      <div class="song-heading">
+        <h1>${escapeHtml(song.title)}</h1>
+        ${song.artist ? `<div class="artist">${escapeHtml(song.artist)}</div>` : ''}
+      </div>
+      <div class="transpose-bar">
+        <button class="tp-btn" id="tp-down">−</button>
+        <div class="tp-label" id="tp-label"></div>
+        <button class="tp-btn" id="tp-up">+</button>
+        <button class="tp-reset" id="tp-reset">pôvodná tónina</button>
+        <button class="tp-flip" id="tp-flip">♯ / ♭</button>
+        <button class="tp-flip" id="tp-notation"></button>
+      </div>
+      <div class="sheet" id="sheet"></div>
+      <div class="actions-row">
+        <button class="btn-ghost" id="btn-edit">Upraviť</button>
+        <button class="btn-text btn-danger" id="btn-delete">Vymazať pieseň</button>
+      </div>
+    `;
+    wireThemeSwitch();
+    document.getElementById('btn-back').addEventListener('click', goList);
+    document.getElementById('btn-toc').addEventListener('click', toggleToc);
+    if(view.tocOpen) wireTocPanel();
+    document.getElementById('tp-down').addEventListener('click', () => changeTranspose(-1));
+    document.getElementById('tp-up').addEventListener('click', () => changeTranspose(1));
+    document.getElementById('tp-reset').addEventListener('click', resetTranspose);
+    document.getElementById('tp-flip').addEventListener('click', toggleFlip);
+    document.getElementById('tp-notation').addEventListener('click', toggleNotation);
+    document.getElementById('btn-edit').addEventListener('click', () => goEditForm(song.id));
+    document.getElementById('btn-delete').addEventListener('click', () => {
+      if(confirm(`Vymazať pieseň „${song.title}“?`)) deleteSong(song.id);
+    });
+    renderDetailHeader();
+    renderDetailSheet();
+    renderNotationLabel();
+    return;
+  }
+
+  if(view.screen === 'form'){
+    const editing = !!view.id;
+    const song = editing ? songs.find(s => s.id === view.id) : { title:'', artist:'', key:'', body:'' };
+    app.innerHTML = `
+      <div class="detail-top">
+        <button class="btn-text" id="btn-cancel">← Zrušiť</button>
+        ${themeSwitchHtml()}
+      </div>
+      <h1 class="form-title">${editing ? 'Upraviť pieseň' : 'Nová pieseň'}</h1>
+      <div class="field">
+        <label for="f-title">Názov piesne</label>
+        <input type="text" id="f-title" value="${escapeHtml(song.title)}" placeholder="napr. Prší, prší">
+      </div>
+      <div class="field">
+        <label for="f-artist">Interpret / autor (nepovinné)</label>
+        <input type="text" id="f-artist" value="${escapeHtml(song.artist)}" placeholder="napr. Elán">
+      </div>
+      <div class="field">
+        <label for="f-key">Pôvodná tónina (nepovinné)</label>
+        <input type="text" id="f-key" value="${escapeHtml(song.key || '')}" placeholder="napr. G">
+      </div>
+      <div class="field">
+        <label for="f-body">Text s akordami</label>
+        <div class="helper">
+          Vlož text presne tak, ako ho máš — buď akordy na riadku nad textom (bežný formát zo spevníkových stránok), alebo priamo v texte v hranatých zátvorkách, napr. <code>[C]Prší, [F]prší, [G]len sa [C]tak leje</code>. Aplikácia si to sama rozpozná a po uložení vieš celú pieseň transponovať. Funguje aj česko-slovenská notácia s <code>H</code> a <code>B</code> (aj pri anglických pesničkách) — v detaile piesne prepneš zápis tlačidlom „Zápis: B / H".
+        </div>
+        <textarea id="f-body" class="chords" placeholder="   C            F           G            C
+Prší, prší, len sa tak leje,
+   Am          F        G
+kdežeby prišiel vôbec niekto...">${escapeHtml(song.body)}</textarea>
+      </div>
+      <div class="form-actions">
+        <button class="btn" id="btn-save">Uložiť pieseň</button>
+        <button class="btn-ghost" id="btn-cancel2">Zrušiť</button>
+      </div>
+    `;
+    wireThemeSwitch();
+    document.getElementById('btn-cancel').addEventListener('click', () => editing ? goDetail(view.id) : goList());
+    document.getElementById('btn-cancel2').addEventListener('click', () => editing ? goDetail(view.id) : goList());
+    document.getElementById('btn-save').addEventListener('click', saveSongFromForm);
+    return;
+  }
+}
+
+(async function init(){
+  await loadTheme();
+  await loadSongs();
+  goList();
+})();
+</script>
+</body>
+</html>
