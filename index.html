@@ -347,38 +347,47 @@ function renderChordedLine(line, semis, preferFlat, mode){
   return row;
 }
 
-// ---------- storage ----------
+// ---------- storage (works both as a Claude artifact and as a standalone page, e.g. GitHub Pages) ----------
+const hasClaudeStorage = typeof window.storage !== 'undefined' && window.storage && typeof window.storage.get === 'function';
+
+async function storageGet(key){
+  if(hasClaudeStorage){
+    try{ const res = await window.storage.get(key, false); return res ? res.value : null; }catch(e){ return null; }
+  }
+  try{ return localStorage.getItem(key); }catch(e){ return null; }
+}
+
+async function storageSet(key, value){
+  if(hasClaudeStorage){
+    try{ await window.storage.set(key, value, false); }catch(e){}
+    return;
+  }
+  try{ localStorage.setItem(key, value); }catch(e){}
+}
+
 async function loadSongs(){
+  const raw = await storageGet(STORAGE_KEY);
   try{
-    const res = await window.storage.get(STORAGE_KEY, false);
-    songs = res && res.value ? JSON.parse(res.value) : [];
+    songs = raw ? JSON.parse(raw) : [];
   }catch(e){
     songs = [];
   }
 }
 
 async function persist(){
-  try{
-    await window.storage.set(STORAGE_KEY, JSON.stringify(songs), false);
-  }catch(e){
-    console.error('Uloženie zlyhalo', e);
-  }
+  await storageSet(STORAGE_KEY, JSON.stringify(songs));
 }
 
 async function loadTheme(){
-  try{
-    const res = await window.storage.get(THEME_KEY, false);
-    theme = res && res.value ? res.value : 'light';
-  }catch(e){
-    theme = 'light';
-  }
+  const raw = await storageGet(THEME_KEY);
+  theme = raw || 'light';
   document.documentElement.setAttribute('data-theme', theme);
 }
 
 async function setTheme(next){
   theme = next;
   document.documentElement.setAttribute('data-theme', theme);
-  try{ await window.storage.set(THEME_KEY, theme, false); }catch(e){}
+  await storageSet(THEME_KEY, theme);
   const s = document.getElementById('theme-switch');
   if(s) renderThemeSwitchState(s);
 }
